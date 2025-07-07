@@ -22,18 +22,6 @@ This Python script automates the process of transferring the most recent `VP_` f
 
 ---
 
-##  Project Structure
-
-vertex-to-kubra-sftp/
-│
-├── main.py # The main transfer script
-├── .env # Local secrets (DO NOT commit)
-├── README.md # This documentation
-├── /log # Auto-created log files
-└── /archive # Optional archive directory
-
----
-
 ##  Setup Instructions
 
 ### 1. Clone the Repository
