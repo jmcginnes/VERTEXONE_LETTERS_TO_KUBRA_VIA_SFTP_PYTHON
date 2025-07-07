@@ -1,0 +1,51 @@
+14:36:51 - INFO: DL from .env: ['jmcginnes@versantpower.com']
+14:36:51 - INFO: Program Started
+14:36:51 - INFO: Connecting to source SFTP: msftp.vertexgroup.com:22 as vpbovuat_toKubra
+14:36:51 - INFO: Connected (version 2.0, client 8.1.0.0_openssh)
+14:36:51 - INFO: Auth banner: b'EFT Server Enterprise'
+14:36:51 - INFO: Authentication (password) successful!
+14:36:52 - INFO: [chan 0] Opened sftp connection (server version 3)
+14:36:53 - INFO: Downloaded VP_20250707021750870_278002006e.zip to local path: E:\cayenta\VersantPowerApps\Reports\JM_VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON\archive\VP_20250707021750870_278002006e_20250707_143652.zip
+14:36:53 - INFO: [chan 0] sftp session closed.
+14:36:53 - INFO: Connecting to destination SFTP: ftp-usa.kubra.com:22 as bangor
+14:36:53 - INFO: Connected (version 2.0, client 2.0)
+14:36:53 - INFO: Authentication (password) successful!
+14:36:53 - INFO: [chan 0] Opened sftp connection (server version 3)
+14:36:54 - INFO: Uploaded file to Kubra SFTP: /preptokubra/VP_20250707021750870_278002006e_20250707_143652.zip
+14:36:54 - INFO: [chan 0] sftp session closed.
+14:36:57 - INFO: Email sent to jmcginnes@versantpower.com
+14:36:57 - INFO: Success email sent.
+14:40:53 - INFO: DL from .env: ['jmcginnes@versantpower.com']
+14:40:53 - INFO: Program Started
+14:40:53 - INFO: Connecting to source SFTP: msftp.vertexgroup.com:22 as vpbovuat_toKubra
+14:40:53 - INFO: Connected (version 2.0, client 8.1.0.0_openssh)
+14:40:53 - INFO: Auth banner: b'EFT Server Enterprise'
+14:40:54 - INFO: Authentication (password) successful!
+14:40:54 - INFO: [chan 0] Opened sftp connection (server version 3)
+14:40:55 - INFO: Downloaded VP_20250707021750870_278002006e.zip to local path: E:\cayenta\VersantPowerApps\Reports\JM_VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON\archive\VP_20250707021750870_278002006e_20250707_144054.zip
+14:40:55 - INFO: [chan 0] sftp session closed.
+14:40:55 - INFO: Connecting to destination SFTP: ftp-usa.kubra.com:22 as bangor
+14:40:55 - INFO: Connected (version 2.0, client 2.0)
+14:40:55 - INFO: Authentication (password) successful!
+14:40:55 - INFO: [chan 0] Opened sftp connection (server version 3)
+14:40:56 - INFO: Uploaded file to Kubra SFTP: /preptokubra/VP_20250707021750870_278002006e_20250707_144054.zip
+14:40:56 - INFO: [chan 0] sftp session closed.
+14:41:02 - INFO: Email sent to jmcginnes@versantpower.com
+14:41:02 - INFO: Success email sent.
+14:47:32 - INFO: DL from .env: ['jmcginnes@versantpower.com']
+14:47:32 - INFO: Program Started
+14:47:32 - INFO: Connecting to source SFTP: msftp.vertexgroup.com:22 as vpbovuat_toKubra
+14:47:33 - INFO: Connected (version 2.0, client 8.1.0.0_openssh)
+14:47:33 - INFO: Auth banner: b'EFT Server Enterprise'
+14:47:33 - INFO: Authentication (password) successful!
+14:47:33 - INFO: [chan 0] Opened sftp connection (server version 3)
+14:47:34 - INFO: Downloaded VP_20250707021750870_278002006e.zip to local path: E:\cayenta\VersantPowerApps\Reports\JM_VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON\archive\VP_20250707021750870_278002006e_20250707_144733.zip
+14:47:34 - INFO: [chan 0] sftp session closed.
+14:47:34 - INFO: Connecting to destination SFTP: ftp-usa.kubra.com:22 as bangor
+14:47:34 - INFO: Connected (version 2.0, client 2.0)
+14:47:35 - INFO: Authentication (password) successful!
+14:47:35 - INFO: [chan 0] Opened sftp connection (server version 3)
+14:47:36 - INFO: Uploaded file to Kubra SFTP: /preptokubra/VP_20250707021750870_278002006e_20250707_144733.zip
+14:47:36 - INFO: [chan 0] sftp session closed.
+14:47:45 - INFO: Email sent to jmcginnes@versantpower.com
+14:47:45 - INFO: Success email sent.
