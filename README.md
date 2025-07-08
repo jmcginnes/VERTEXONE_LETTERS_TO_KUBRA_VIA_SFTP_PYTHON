@@ -2,23 +2,43 @@
 
 ##  Overview
 
-This Python script automates the process of transferring the most recent `VP_` file from the VertexOne SFTP site to the Kubra SFTP site. It performs the following:
+This Python script automates the secure transfer of VertexOne "VP_" letter files to Kubra’s SFTP site. It performs the following steps:
 
-- Connects securely to VertexOne’s SFTP
-- Downloads the most recent file that begins with `VP_`
-- Renames the file with a timestamp for uniqueness
-- Uploads the file to Kubra’s SFTP location
-- Logs all activity
-- Sends success/failure notifications via email to a distribution list
+Connects securely to VertexOne’s SFTP via credentials stored in Keeper Secrets Manager
+
+Downloads all new VP_*.zip files since the last run
+
+Encrypts each file using GPG
+
+Renames each with a timestamp to ensure uniqueness
+
+Uploads encrypted files to Kubra’s SFTP (also via Keeper credentials)
+
+Logs all activity
+
+Sends email notifications (success or failure) using O365
 
 ---
 
 ##  Prerequisites
 
-- Python 3.8+
-- Access to both SFTP credentials (VertexOne + Kubra)
-- Installed Python packages: `paramiko`, `python-dotenv`
-- `.env` file configured with secure credentials (see below)
+Python 3.11+ (64-bit recommended)
+
+Keeper Secrets Manager configured for the service account
+
+GPG installed and configured
+
+Python packages:
+
+paramiko
+
+python-dotenv
+
+python-gnupg
+
+keeper-secrets-manager-core
+
+A configured .env file (see below) for non-secret settings
 
 ---
 
@@ -28,7 +48,7 @@ This Python script automates the process of transferring the most recent `VP_` f
 
 ```bash
 git clone https://github.com/jmcginnes/VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON.git
-cd vertex-to-kubra-sftp
+cd VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON
 
 ```
 2. Install Dependencies
@@ -38,40 +58,50 @@ cd vertex-to-kubra-sftp
 Fill in your .env file like this:
 
 ```bash
-# Shared libraries and config
+# Shared library and Keeper config
 SHARED_LIBRARIES=E:\cayenta\VersantPowerApps\SharedLibraries
 KSM_CONFIG=E:\cayenta\VersantPowerApps\SharedLibraries\ksm-config.json
 
-# Email Distribution List
-DL=example@versantpower.com
+# GPG encryption settings
+GPG_DIRECTORY=E:\cayenta\GPG_Home
+GPG_BINARY=C:\Program Files (x86)\GNU\GnuPG\gpg.exe
+GPG_RECIPIENT=KubraPublicKey
 
-# Program Info
+# Email Distribution List
+DL=jmcginnes@versantpower.com
+
+# Program metadata
 PROGRAM_NAME=VERTEXONE_193H_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON
 
-# Source SFTP (VertexOne)
+# SFTP settings (host and port only)
 SRC_SFTP_HOST=msftp.vertexgroup.com
 SRC_SFTP_PORT=22
-SRC_SFTP_USER=your_vertex_user (in Keeper)
-SRC_SFTP_PASSWORD=your_vertex_password (in Keeper)
-
-# Destination SFTP (Kubra)
 DEST_SFTP_HOST=ftp-usa.kubra.com
 DEST_SFTP_PORT=22
-DEST_SFTP_USER=your_kubra_user (in Keeper)
-DEST_SFTP_PASSWORD=your_kubra_password (in Keeper)
-DEST_SFTP_PATH=/preptokubra/ 
+DEST_SFTP_PATH=/preptokubra/
 
-# Local save path
+# Archive location for processed files
 LOCAL_SAVE_PATH=E:\cayenta\VersantPowerApps\Reports\JM_VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON\archive
 
 ```
+This script pulls sensitive credentials from Keeper Secrets Manager, not from .env.
+
+These are referenced in the code and should be assigned to the correct secret in your Keeper vault. The script expects each to have:
+
+
 4. Run the Script
 ```bash
 python main.py
 ```
  
 ## Email Notifications
-The script uses your internal O365Manager module to send emails to the recipients in the DL list. Emails are sent on both success and failure events.
+This script uses your internal O365Manager module to send status emails to the distribution list (DL). You'll receive messages when:
+
+Files are successfully sent to Kubra
+
+The process encounters a failure
+
+No new files were found since last run (no email is sent)
 
 ## Setting Up Windows Task Scheduler
 To run this automatically on a schedule:

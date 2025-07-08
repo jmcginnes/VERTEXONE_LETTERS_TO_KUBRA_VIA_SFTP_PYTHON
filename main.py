@@ -9,11 +9,35 @@ import sys
 import os
 import paramiko
 import datetime
+import gnupg
 from dotenv import load_dotenv
 
 # Load environment variables
 with open('.env', 'r') as envFile:
     load_dotenv(stream=envFile)
+
+gpg = gnupg.GPG(
+     gnupghome=os.getenv('GPG_DIRECTORY'),
+    gpgbinary=os.getenv('GPG_BINARY')
+)
+
+# Initialize Keeper Secrets Manager
+from keeper_secrets_manager_core import SecretsManager
+from keeper_secrets_manager_core.storage import FileKeyValueStorage
+
+secrets_manager = SecretsManager(
+    config=FileKeyValueStorage(os.getenv('KSM_CONFIG'))
+)
+
+# Retrieve VERTEX SFTP credentials from Keeper
+vertex_sftp_secrets = secrets_manager.get_secrets(['wJL5RIc8DbdQLkXG0i_O5Q'])[0]
+vertex_user = vertex_sftp_secrets.field('login', single=True)
+vertex_pass = vertex_sftp_secrets.field('password', single=True)
+
+# Retrieve Kubra SFTP credentials from Keeper
+kubra_sftp_secrets = secrets_manager.get_secrets(['-b-qnRXophRlB5e6GdVoWA'])[0]
+kubra_user = kubra_sftp_secrets.field('login', single=True)
+kubra_pass = kubra_sftp_secrets.field('password', single=True)
 
 # Add shared libraries to path
 sys.path.append(os.getenv('SHARED_LIBRARIES'))
@@ -62,16 +86,50 @@ def sendToDistributionList(subject, body, dl_list, **kwargs):
 # %%
 #############################
 # 
+# Function: Tracking Last Run
+#
+#############################
+
+LAST_RUN_FILE = os.path.join(programDirectory, 'last_run_timestamp.txt')
+
+def get_last_run_time():
+    if os.path.exists(LAST_RUN_FILE):
+        with open(LAST_RUN_FILE, 'r') as f:
+            content = f.read().strip()
+            if content:
+                try:
+                    return datetime.datetime.fromisoformat(content)
+                except ValueError:
+                    logger.warning(f"Invalid timestamp in {LAST_RUN_FILE}: '{content}', using default.")
+            else:
+                logger.warning(f"{LAST_RUN_FILE} is empty, using default last run time.")
+    else:
+        logger.info(f"{LAST_RUN_FILE} does not exist, using default last run time.")
+    
+    # Default fallback to 1 day ago
+    return datetime.datetime.now() - datetime.timedelta(days=1)
+
+
+def set_last_run_time(timestamp=None):
+    if not timestamp:
+        timestamp = datetime.datetime.now()
+    with open(LAST_RUN_FILE, 'w') as f:
+        f.write(timestamp.isoformat())
+
+
+# %%
+#############################
+# 
 # Function: Get Most Recent VP_ File from VertexOne SFTP
 #
 #############################
 
-def fetch_latest_vp_file_from_sftp():
+def fetch_new_vp_files_from_sftp():
     try:
         host = os.getenv('SRC_SFTP_HOST')
         port = int(os.getenv('SRC_SFTP_PORT', 22))
-        username = os.getenv('SRC_SFTP_USER')
-        password = os.getenv('SRC_SFTP_PASSWORD')
+        username = vertex_user
+        password = vertex_pass
         logger.info(f"Connecting to source SFTP: {host}:{port} as {username}")
 
         transport = paramiko.Transport((host, port))
@@ -79,45 +137,55 @@ def fetch_latest_vp_file_from_sftp():
         sftp = paramiko.SFTPClient.from_transport(transport)
 
         file_list = sftp.listdir_attr('.')
-        vp_files = [f for f in file_list if f.filename.startswith('VP_')]
+        vp_files = [f for f in file_list if f.filename.startswith('VP_') and f.filename.endswith('.zip')]
 
         if not vp_files:
-            raise FileNotFoundError("No files starting with 'VP_' found on VertexOne SFTP.")
+            logger.info("No VP_ zip files found on SFTP.")
+            return []
 
-        latest_file = max(vp_files, key=lambda f: f.st_mtime)
+        last_run = get_last_run_time()
+        logger.info(f"Last run time: {last_run.isoformat()}")
+
+        # Filter files modified after last run
+        new_files = [f for f in vp_files if datetime.datetime.fromtimestamp(f.st_mtime) > last_run]
+
+        if not new_files:
+            logger.info("No new VP_ files found since last run.")
+            return []
+
         local_dir = os.getenv('LOCAL_SAVE_PATH')
         os.makedirs(local_dir, exist_ok=True)
 
-        base, ext = os.path.splitext(latest_file.filename)
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        local_file_path = os.path.join(local_dir, f"{base}_{timestamp}{ext}")
+        downloaded_paths = []
 
-        sftp.get(latest_file.filename, local_file_path)
-
-        logger.info(f"Downloaded {latest_file.filename} to local path: {local_file_path}")
+        for f in new_files:
+            remote_name = f.filename
+            local_path = os.path.join(local_dir, remote_name)
+            sftp.get(remote_name, local_path)
+            downloaded_paths.append(local_path)
+            logger.info(f"Downloaded: {remote_name} -> {local_path}")
 
         sftp.close()
         transport.close()
 
-        return local_file_path
+        return downloaded_paths
 
     except Exception as e:
-        logger.error(f"Failed to fetch VP_ file from VertexOne SFTP: {e}")
+        logger.error(f"Error during SFTP transfer: {e}")
         raise
-
 # %%
 #############################
 # 
-# Function: Send File to Kubra SFTP
+# Function: Send Files to Kubra SFTP
 #
 #############################
 
 def send_file_to_kubra(file_path):
     try:
         host = os.getenv('DEST_SFTP_HOST')
-        port = int(os.getenv('DEST_SFTP_PORT', 21))
-        username = os.getenv('DEST_SFTP_USER')
-        password = os.getenv('DEST_SFTP_PASSWORD')
+        port = int(os.getenv('DEST_SFTP_PORT', 22))
+        username = kubra_user
+        password = kubra_pass
         remote_dir = os.getenv('DEST_SFTP_PATH', '/')
         logger.info(f"Connecting to destination SFTP: {host}:{port} as {username}")
 
@@ -128,7 +196,7 @@ def send_file_to_kubra(file_path):
         remote_path = os.path.join(remote_dir, os.path.basename(file_path)).replace('\\', '/')
         sftp.put(file_path, remote_path)
 
-        logger.info(f"Uploaded file to Kubra SFTP: {remote_path}")
+        logger.info(f"Uploaded encrypted file to Kubra SFTP: {remote_path}")
 
         sftp.close()
         transport.close()
@@ -148,24 +216,43 @@ def send_file_to_kubra(file_path):
 logger.info('Program Started')
 
 try:
-    vp_file = fetch_latest_vp_file_from_sftp()
-    send_file_to_kubra(vp_file)
+    downloaded_files = fetch_new_vp_files_from_sftp()
 
-    subject = f"{programName} - VertexOne Letter File Transferred Successfully"
-    body = (
-        f"A file named '<b>{os.path.basename(vp_file)}</b>' was successfully transferred:<br>"
-        f"- Pulled from Vertex SFTP<br>"
-        f"- Saved locally to {os.getenv('LOCAL_SAVE_PATH')}<br>"
-        f"- Sent to Kubra SFTP in {os.getenv('DEST_SFTP_PATH')}<br><br>"
-        f"Program completed on {formattedDate}."
-    )
+    encrypted_files = []
 
+    for file_path in downloaded_files:
+        output_path = file_path + '.gpg'
+        with open(file_path, 'rb') as f:
+            status = gpg.encrypt_file(
+                f,
+                recipients=['Kubra <it@kubra.com>'],
+                output=output_path
+            )
 
-    sendToDistributionList(subject, body, dl_list)
-    logger.info("Success email sent.")
+        if status.ok:
+            logger.info(f"Encrypted {file_path} -> {output_path}")
+            send_file_to_kubra(output_path)
+            encrypted_files.append(output_path)
+        else:
+            logger.error(f"GPG encryption failed for {file_path}: {status.stderr}")
+
+    if encrypted_files:
+        subject = f"{programName} - {len(encrypted_files)} File(s) Encrypted & Transferred"
+        file_list_html = "<br>".join([os.path.basename(f) for f in encrypted_files])
+        body = (
+            f"The following file(s) were encrypted and transferred to Kubra:<br>"
+            f"{file_list_html}<br><br>"
+            f"Saved to: {os.getenv('DEST_SFTP_PATH')}<br>"
+            f"Completed on {formattedDate}."
+        )
+        set_last_run_time()
+        sendToDistributionList(subject, body, dl_list)
+        logger.info("Success email sent.")
+    else:
+        logger.info("No new files encrypted or transferred; skipping email.")
 
 except Exception as e:
     logger.error(f"Fatal error occurred: {e}")
-    subject = f"{programName} - VertexOne Letter File Transfer FAILED"
+    subject = f"{programName} - VertexOne File Transfer FAILED"
     body = f"The following error occurred during execution:\n\n{e}\n\nPlease check the logs for details."
     sendToDistributionList(subject, body, dl_list)
