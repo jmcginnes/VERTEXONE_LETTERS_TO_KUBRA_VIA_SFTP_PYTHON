@@ -100,14 +100,14 @@ def get_last_run_time():
                 try:
                     return datetime.datetime.fromisoformat(content)
                 except ValueError:
-                    logger.warning(f"Invalid timestamp in {LAST_RUN_FILE}: '{content}', using default.")
+                    logger.warning(f"Invalid timestamp in {LAST_RUN_FILE}: '{content}', skipping file processing.")
             else:
-                logger.warning(f"{LAST_RUN_FILE} is empty, using default last run time.")
+                logger.warning(f"{LAST_RUN_FILE} is empty, skipping file processing.")
     else:
-        logger.info(f"{LAST_RUN_FILE} does not exist, using default last run time.")
+        logger.info(f"{LAST_RUN_FILE} does not exist, skipping file processing.")
     
-    # Default fallback to 1 day ago
-    return datetime.datetime.now() - datetime.timedelta(days=1)
+    # Default fallback
+    return None
 
 
 def set_last_run_time(timestamp=None):
@@ -144,10 +144,13 @@ def fetch_new_vp_files_from_sftp():
             return []
 
         last_run = get_last_run_time()
-        logger.info(f"Last run time: {last_run.isoformat()}")
+        if last_run is None:
+            logger.warning("Last run timestamp is unavailable. Skipping file processing.")
+            return []
 
-        # Filter files modified after last run
+        logger.info(f"Last run time: {last_run.isoformat()}")
         new_files = [f for f in vp_files if datetime.datetime.fromtimestamp(f.st_mtime) > last_run]
+
 
         if not new_files:
             logger.info("No new VP_ files found since last run.")
