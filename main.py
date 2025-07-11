@@ -125,6 +125,8 @@ def set_last_run_time(timestamp=None):
 #############################
 
 def fetch_new_vp_files_from_sftp():
+    transport = None
+    sftp = None
     try:
         host = os.getenv('SRC_SFTP_HOST')
         port = int(os.getenv('SRC_SFTP_PORT', 22))
@@ -151,7 +153,6 @@ def fetch_new_vp_files_from_sftp():
         logger.info(f"Last run time: {last_run.isoformat()}")
         new_files = [f for f in vp_files if datetime.datetime.fromtimestamp(f.st_mtime) > last_run]
 
-
         if not new_files:
             logger.info("No new VP_ files found since last run.")
             return []
@@ -168,14 +169,19 @@ def fetch_new_vp_files_from_sftp():
             downloaded_paths.append(local_path)
             logger.info(f"Downloaded: {remote_name} -> {local_path}")
 
-        sftp.close()
-        transport.close()
-
         return downloaded_paths
 
     except Exception as e:
         logger.error(f"Error during SFTP transfer: {e}")
         raise
+
+    finally:
+        if sftp:
+            sftp.close()
+            logger.info("SFTP session closed.")
+        if transport:
+            transport.close()
+            logger.info("Transport connection closed.")
 # %%
 #############################
 # 
