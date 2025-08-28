@@ -76,12 +76,15 @@ logger.info(f"DL from .env: {dl_list}")
 #############################
 
 def sendToDistributionList(subject, body, dl_list, **kwargs):
-    for recipient in dl_list:
-        result = sendEmail(to=recipient, subject=subject, body=body, **kwargs)
+    try:
+        result = sendEmail(to=dl_list, subject=subject, body=body, **kwargs)
         if result is True:
-            logger.info(f"Email sent to {recipient}")
+            logger.info(f"Email sent to distribution list: {dl_list}")
         else:
-            logger.error(f"Failed to send email to {recipient}: {result}")
+            logger.error(f"Failed to send email to distribution list {dl_list}: {result}")
+    except Exception as e:
+        logger.error(f"Exception occurred while sending email to distribution list {dl_list}: {e}")
+
 
 # %%
 #############################
@@ -185,35 +188,40 @@ def fetch_new_vp_files_from_sftp():
 # %%
 #############################
 # 
+# Function: Connect to Kubra SFTP
+#
+#############################
+
+def connect_to_kubra_sftp():
+    host = os.getenv('DEST_SFTP_HOST')
+    port = int(os.getenv('DEST_SFTP_PORT', 22))
+    username = kubra_user
+    password = kubra_pass
+    logger.info(f"Connecting to destination SFTP: {host}:{port} as {username}")
+
+    transport = paramiko.Transport((host, port))
+    transport.connect(username=username, password=password)
+    sftp = paramiko.SFTPClient.from_transport(transport)
+
+    return sftp, transport
+
+
+# %%
+#############################
+# 
 # Function: Send Files to Kubra SFTP
 #
 #############################
 
-def send_file_to_kubra(file_path):
+def send_file_to_kubra(file_path, sftp):
     try:
-        host = os.getenv('DEST_SFTP_HOST')
-        port = int(os.getenv('DEST_SFTP_PORT', 22))
-        username = kubra_user
-        password = kubra_pass
         remote_dir = os.getenv('DEST_SFTP_PATH', '/')
-        logger.info(f"Connecting to destination SFTP: {host}:{port} as {username}")
-
-        transport = paramiko.Transport((host, port))
-        transport.connect(username=username, password=password)
-        sftp = paramiko.SFTPClient.from_transport(transport)
-
         remote_path = os.path.join(remote_dir, os.path.basename(file_path)).replace('\\', '/')
         sftp.put(file_path, remote_path)
-
         logger.info(f"Uploaded encrypted file to Kubra SFTP: {remote_path}")
-
-        sftp.close()
-        transport.close()
-
     except Exception as e:
         logger.error(f"Failed to send file to Kubra SFTP: {e}")
         raise
-
 
 # %%
 #############################
@@ -229,21 +237,30 @@ try:
 
     encrypted_files = []
 
-    for file_path in downloaded_files:
-        output_path = file_path + '.gpg'
-        with open(file_path, 'rb') as f:
-            status = gpg.encrypt_file(
-                f,
-                recipients=['Kubra <it@kubra.com>'],
-                output=output_path
-            )
+    if downloaded_files:
+        sftp, transport = connect_to_kubra_sftp()
+        try:
+            for file_path in downloaded_files:
+                output_path = file_path + '.gpg'
+                with open(file_path, 'rb') as f:
+                    status = gpg.encrypt_file(
+                        f,
+                        recipients=['Kubra <it@kubra.com>'],
+                        output=output_path
+                    )
 
-        if status.ok:
-            logger.info(f"Encrypted {file_path} -> {output_path}")
-            send_file_to_kubra(output_path)
-            encrypted_files.append(output_path)
-        else:
-            logger.error(f"GPG encryption failed for {file_path}: {status.stderr}")
+                if status.ok:
+                    logger.info(f"Encrypted {file_path} -> {output_path}")
+                    send_file_to_kubra(output_path, sftp)
+                    encrypted_files.append(output_path)
+                else:
+                    logger.error(f"GPG encryption failed for {file_path}: {status.stderr}")
+        finally:
+            sftp.close()
+            transport.close()
+            logger.info("Kubra SFTP connection closed.")
+    else:
+        logger.info("No new files to process.")
 
     if encrypted_files:
         subject = f"{programName} - {len(encrypted_files)} File(s) Encrypted & Transferred"
