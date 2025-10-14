@@ -160,8 +160,17 @@ def fetch_new_vp_files_from_sftp():
             logger.info("No new VP_ files found since last run.")
             return []
 
-        local_dir = os.getenv('LOCAL_SAVE_PATH')
+        # Base directory from .env
+        base_local_dir = os.getenv('LOCAL_SAVE_PATH')
+
+        # Create timestamped subfolder
+        timestamp = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M')
+        local_dir = os.path.join(base_local_dir, f"vertexone_letters_{timestamp}")
+
+        # Make sure it exists
         os.makedirs(local_dir, exist_ok=True)
+
+        logger.info(f"Saving downloaded files to: {local_dir}")
 
         downloaded_paths = []
 
