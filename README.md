@@ -12,6 +12,8 @@ Encrypts each file using GPG
 
 Renames each with a timestamp to ensure uniqueness
 
+Copies files to Versant directory inside a new directory for each run.
+
 Uploads encrypted files to Kubra’s SFTP (also via Keeper credentials)
 
 Logs all activity
@@ -68,7 +70,7 @@ GPG_BINARY=C:\Program Files (x86)\GNU\GnuPG\gpg.exe
 GPG_RECIPIENT=KubraPublicKey
 
 # Email Distribution List
-DL=jmcginnes@versantpower.com
+DL=cayentatechnotes@versantpower.com, tier1support@versantpower.com
 
 # Program metadata
 PROGRAM_NAME=VERTEXONE_193H_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON
@@ -81,12 +83,12 @@ DEST_SFTP_PORT=22
 DEST_SFTP_PATH=/preptokubra/
 
 # Archive location for processed files
-LOCAL_SAVE_PATH=E:\cayenta\VersantPowerApps\Reports\JM_VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON\archive
+LOCAL_SAVE_PATH=\\MECISAPP01\cayenta\cayprod\ums\cu_transfer\BHE Letters\Output\
 
 ```
 This script pulls sensitive credentials from Keeper Secrets Manager, not from .env.
 
-These are referenced in the code and should be assigned to the correct secret in your Keeper vault. The script expects each to have:
+These are referenced in the code and should be assigned to the correct secret in your Keeper vault.
 
 
 4. Run the Script
@@ -119,7 +121,7 @@ Check Run whether user is logged in or not
 
 Check Run with Highest Privilege
 
-Be sure to run as the svc_cayenta service account user, NOT your own username.
+Be sure to run as the svc_cayrpt service account user, NOT your own username.
 
 Triggers:
 
@@ -131,9 +133,9 @@ Action: Start a program
 
 Program/script: "E:\programs\Python311-32\python.exe"
 
-Add arguments: E:\cayenta\VersantPowerApps\Reports\JM_VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON\main.py
+Add arguments: E:\cayenta\VersantPowerApps\Reports\VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON\main.py
 
-Start in: E:\cayenta\VersantPowerApps\Reports\JM_VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON
+Start in: E:\cayenta\VersantPowerApps\Reports\VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON
 
 Settings:
 
