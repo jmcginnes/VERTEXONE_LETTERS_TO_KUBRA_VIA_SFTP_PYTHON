@@ -60,31 +60,30 @@ cd VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON
 Fill in your .env file like this:
 
 ```bash
-# Shared libraries and config
+# Shared library and Keeper config
 SHARED_LIBRARIES=E:\cayenta\VersantPowerApps\SharedLibraries
 KSM_CONFIG=E:\cayenta\VersantPowerApps\SharedLibraries\ksm-config.json
 
-# Email Distribution
+# GPG encryption settings
+GPG_DIRECTORY=E:\cayenta\GPG_Home
+GPG_BINARY=C:\Program Files (x86)\GNU\GnuPG\gpg.exe
+GPG_RECIPIENT=KubraPublicKey
+
+# Email Distribution List
 DL=cayentatechnotes@versantpower.com, tier1support@versantpower.com
 
-# Program Info
-PROGRAM_NAME=VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON
+# Program metadata
+PROGRAM_NAME=VERTEXONE_193H_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON
 
-# Source SFTP (Vertex)
+# SFTP settings (host and port only)
 SRC_SFTP_HOST=msftp.vertexgroup.com
 SRC_SFTP_PORT=22
-
-# Destination SFTP (Kubra)
 DEST_SFTP_HOST=ftp-usa.kubra.com
 DEST_SFTP_PORT=22
-DEST_SFTP_PATH=/tokubra/
+DEST_SFTP_PATH=/preptokubra/
 
-#GPG Information
-GPG_DIRECTORY=\\MECISAPP01\cayenta\VersantPowerApps\gpg
-GPG_BINARY=\\MECISAPP01\cayenta\VersantPowerApps\gpg\gpg.exe
-
-# Local save path
-LOCAL_SAVE_PATH=\\mecisapp01\cayenta\cayprod\ums\cu_transfer\BHE Letters\Output
+# Archive location for processed files
+LOCAL_SAVE_PATH=\\MECISAPP01\cayenta\cayprod\ums\cu_transfer\BHE Letters\Output\
 
 ```
 This script pulls sensitive credentials from Keeper Secrets Manager, not from .env.
@@ -132,11 +131,11 @@ Actions:
 
 Action: Start a program
 
-Program/script: "E:\programs\python_311_32\python.exe"
+Program/script: "E:\programs\Python311-32\python.exe"
 
-Add arguments: E:\cayenta\VersantPowerApps\VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON\main.py
+Add arguments: E:\cayenta\VersantPowerApps\Reports\VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON\main.py
 
-Start in: E:\cayenta\VersantPowerApps\VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON
+Start in: E:\cayenta\VersantPowerApps\Reports\VERTEXONE_LETTERS_TO_KUBRA_VIA_SFTP_PYTHON
 
 Settings:
 
